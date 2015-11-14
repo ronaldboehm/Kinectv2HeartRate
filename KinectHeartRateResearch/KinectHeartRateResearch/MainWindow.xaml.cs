@@ -80,19 +80,53 @@ namespace KinectHeartRateResearch
         {
             engine = REngine.GetInstance();
             engine.Initialize();
-            var currentDir = System.Environment.CurrentDirectory.Replace('\\', '/');
+
             if (!m_JADE_Loaded)
             {
+                InitJadePackage();
                
-                engine.Evaluate("install.packages('JADE', repos='http://cran.us.r-project.org')");
+                //engine.Evaluate("install.packages('JADE', repos='http://cran.us.r-project.org')");
 
-                //repos ='https://cran.rstudio.com/bin/windows/contrib/3.2/JADE_1.9-93.zip')");
+                ////repos ='https://cran.rstudio.com/bin/windows/contrib/3.2/JADE_1.9-93.zip')");
 
-                engine.Evaluate("library('JADE')");
+                //engine.Evaluate("library('JADE')");
                 m_JADE_Loaded = true;
             }
             
         }
+
+        private const string workingDirectory = "D:\\Temp\\R";
+        private const string libraryLocation  = "D:\\Temp\\R\\Libs";
+
+        private void InitJadePackage() //string workingDirectory, string libraryLocation)
+        {
+            if (workingDirectory == null)
+                throw new ArgumentNullException("workingDirectory");
+            if (libraryLocation == null)
+                throw new ArgumentNullException("libraryLocation");
+
+            if (!System.IO.Directory.Exists(workingDirectory))
+                System.IO.Directory.CreateDirectory(workingDirectory);
+                // throw new ArgumentException(String.Format("Working directory {0} does not exist.", workingDirectory));
+            if (!System.IO.Directory.Exists(libraryLocation))
+                System.IO.Directory.CreateDirectory(libraryLocation);
+                // throw new ArgumentException(String.Format("R library location {0} does not exist.", libraryLocation));
+
+            try
+            {
+                // TODO: only once
+                // engine.Evaluate("install.packages(\"JADE\", repos='http://cran.us.r-project.org', lib = \"{0}\")", libraryLocation.Replace(@"\", @"\\"));
+
+                // R also uses \ as the escape character, so replace \ with \\:
+                engine.Evaluate("setwd(\"{0}\")", workingDirectory.Replace(@"\", @"\\"));
+                engine.Evaluate("library(JADE, lib.loc=\"{0}\")", libraryLocation.Replace(@"\", @"\\"));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error initializing R. Continuing startup to allow adding the R packages in the settings." + e.ToString());
+            }
+        }
+
         private void MainWindow_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
            
@@ -234,6 +268,8 @@ namespace KinectHeartRateResearch
             imgKinectView.Source = this.ImageSource;
 
 
+            //SetupFace
+            InitializeFace();
 
         }
 
@@ -309,17 +345,21 @@ namespace KinectHeartRateResearch
 
                 this.m_currentTrackedBody = selectedBody;
                 this.m_CurrentTrackingId = selectedBody.TrackingId;
-                //SetupFace
-                InitializeFace();
             }
         }
 
         private void InitializeFace()
         {
-            m_FaceSource = new Microsoft.Kinect.Face.FaceFrameSource(m_Sensor, m_CurrentTrackingId, Microsoft.Kinect.Face.FaceFrameFeatures.BoundingBoxInColorSpace | Microsoft.Kinect.Face.FaceFrameFeatures.BoundingBoxInInfraredSpace | Microsoft.Kinect.Face.FaceFrameFeatures.PointsInColorSpace | Microsoft.Kinect.Face.FaceFrameFeatures.PointsInInfraredSpace);
-            m_FaceReader = m_FaceSource.OpenReader();
-            m_FaceReader.FrameArrived += M_FaceReader_FrameArrived;
-           
+            try
+            {
+                m_FaceSource = new Microsoft.Kinect.Face.FaceFrameSource(m_Sensor, m_CurrentTrackingId, Microsoft.Kinect.Face.FaceFrameFeatures.BoundingBoxInColorSpace | Microsoft.Kinect.Face.FaceFrameFeatures.BoundingBoxInInfraredSpace | Microsoft.Kinect.Face.FaceFrameFeatures.PointsInColorSpace | Microsoft.Kinect.Face.FaceFrameFeatures.PointsInInfraredSpace);
+                m_FaceReader = m_FaceSource.OpenReader();
+                m_FaceReader.FrameArrived += M_FaceReader_FrameArrived;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         private void M_FaceReader_FrameArrived(object sender, Microsoft.Kinect.Face.FaceFrameArrivedEventArgs e)
@@ -689,6 +729,24 @@ namespace KinectHeartRateResearch
 
             m_Sensor.Close();
             m_Sensor = null;            
+        }
+    }
+
+    public static class RExtensions
+    {
+        public static SymbolicExpression Evaluate(this REngine R, string format, object arg0)
+        {
+            return R.Evaluate(String.Format(format, arg0));
+        }
+
+        public static SymbolicExpression Evaluate(this REngine R, string format, params object[] args)
+        {
+            return R.Evaluate(String.Format(format, args));
+        }
+
+        public static IList<T> AsList<T>(this SymbolicExpression expression)
+        {
+            return expression.AsVector().ToArray().Select(obj => (T)obj).ToList();
         }
     }
 }
