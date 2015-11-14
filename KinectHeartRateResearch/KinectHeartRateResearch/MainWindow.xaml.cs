@@ -568,7 +568,7 @@ namespace KinectHeartRateResearch
                             double norm_green = prime_green / size;
                             double norm_ir = prime_ir / size;
 
-                            Plot(prime_red, prime_green, prime_blue, prime_ir);
+                            Plot(norm_red, norm_green, norm_blue, norm_ir);
 
                             string data = string.Format("{0},{1},{2},{3},{4},{5}\n", 
                                 m_secondsElapsed.ElapsedMilliseconds.ToString(EnNumberFormat),
