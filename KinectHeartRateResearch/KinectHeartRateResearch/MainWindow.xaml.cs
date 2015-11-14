@@ -738,10 +738,10 @@ namespace KinectHeartRateResearch
             plotterSourceIR    = CreateObservableDataSourceWithIdentiyMapping();
 
             // Add all three graphs. Colors are not specified and chosen random
-            plotter.AddLineGraph(plotterSourceRed,   Colors.Red,   2, "Red");
-            plotter.AddLineGraph(plotterSourceGreen, Colors.Green, 2, "Green");
-            plotter.AddLineGraph(plotterSourceBlue,  Colors.Blue,  2, "Blue");
-            plotter.AddLineGraph(plotterSourceIR,    Colors.Gray,  2, "IR");
+            plotter.AddLineGraph(plotterSourceRed,   Color.FromArgb(128, 255,   0,   0),   2, "Red");
+            plotter.AddLineGraph(plotterSourceGreen, Color.FromArgb(255,   0, 255,   0),   2, "Green");
+            plotter.AddLineGraph(plotterSourceBlue,  Color.FromArgb(128,   0,   0, 255),   2, "Blue");
+            plotter.AddLineGraph(plotterSourceIR,    Colors.Gray,                      2, "IR");
         }
 
         private static ObservableDataSource<Point> CreateObservableDataSourceWithIdentiyMapping() 
