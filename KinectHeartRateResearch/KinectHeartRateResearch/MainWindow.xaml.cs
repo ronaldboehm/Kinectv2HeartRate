@@ -266,11 +266,6 @@ namespace KinectHeartRateResearch
             // create the bitmap to display
             this.m_colorBitmap = new WriteableBitmap(colorFrameDescription.Width, colorFrameDescription.Height, 96.0, 96.0, PixelFormats.Bgr32, null);
             imgKinectView.Source = this.ImageSource;
-
-
-            //SetupFace
-            InitializeFace();
-
         }
 
 
@@ -345,21 +340,17 @@ namespace KinectHeartRateResearch
 
                 this.m_currentTrackedBody = selectedBody;
                 this.m_CurrentTrackingId = selectedBody.TrackingId;
+
+                //SetupFace
+                InitializeFace();
             }
         }
 
         private void InitializeFace()
         {
-            try
-            {
-                m_FaceSource = new Microsoft.Kinect.Face.FaceFrameSource(m_Sensor, m_CurrentTrackingId, Microsoft.Kinect.Face.FaceFrameFeatures.BoundingBoxInColorSpace | Microsoft.Kinect.Face.FaceFrameFeatures.BoundingBoxInInfraredSpace | Microsoft.Kinect.Face.FaceFrameFeatures.PointsInColorSpace | Microsoft.Kinect.Face.FaceFrameFeatures.PointsInInfraredSpace);
-                m_FaceReader = m_FaceSource.OpenReader();
-                m_FaceReader.FrameArrived += M_FaceReader_FrameArrived;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
+            m_FaceSource = new Microsoft.Kinect.Face.FaceFrameSource(m_Sensor, m_CurrentTrackingId, Microsoft.Kinect.Face.FaceFrameFeatures.BoundingBoxInColorSpace | Microsoft.Kinect.Face.FaceFrameFeatures.BoundingBoxInInfraredSpace | Microsoft.Kinect.Face.FaceFrameFeatures.PointsInColorSpace | Microsoft.Kinect.Face.FaceFrameFeatures.PointsInInfraredSpace);
+            m_FaceReader = m_FaceSource.OpenReader();
+            m_FaceReader.FrameArrived += M_FaceReader_FrameArrived;
         }
 
         private void M_FaceReader_FrameArrived(object sender, Microsoft.Kinect.Face.FaceFrameArrivedEventArgs e)
