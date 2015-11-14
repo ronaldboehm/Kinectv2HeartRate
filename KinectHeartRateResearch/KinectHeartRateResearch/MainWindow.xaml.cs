@@ -84,38 +84,22 @@ namespace KinectHeartRateResearch
             if (!m_JADE_Loaded)
             {
                 InitJadePackage();
-               
-                //engine.Evaluate("install.packages('JADE', repos='http://cran.us.r-project.org')");
-
-                ////repos ='https://cran.rstudio.com/bin/windows/contrib/3.2/JADE_1.9-93.zip')");
-
-                //engine.Evaluate("library('JADE')");
                 m_JADE_Loaded = true;
             }
             
         }
 
-        private const string workingDirectory = "D:\\Temp\\R";
-        private const string libraryLocation  = "D:\\Temp\\R\\Libs";
+        private string workingDirectory { get { return System.Environment.CurrentDirectory; } }
+        private string libraryLocation { get { return System.IO.Path.Combine(workingDirectory, "Libs"); } }
 
-        private void InitJadePackage() //string workingDirectory, string libraryLocation)
+        private void InitJadePackage() 
         {
-            if (workingDirectory == null)
-                throw new ArgumentNullException("workingDirectory");
-            if (libraryLocation == null)
-                throw new ArgumentNullException("libraryLocation");
-
-            if (!System.IO.Directory.Exists(workingDirectory))
-                System.IO.Directory.CreateDirectory(workingDirectory);
-                // throw new ArgumentException(String.Format("Working directory {0} does not exist.", workingDirectory));
-            if (!System.IO.Directory.Exists(libraryLocation))
-                System.IO.Directory.CreateDirectory(libraryLocation);
-                // throw new ArgumentException(String.Format("R library location {0} does not exist.", libraryLocation));
-
             try
             {
-                // TODO: only once
-                // engine.Evaluate("install.packages(\"JADE\", repos='http://cran.us.r-project.org', lib = \"{0}\")", libraryLocation.Replace(@"\", @"\\"));
+                if (!System.IO.Directory.Exists(libraryLocation))
+                    System.IO.Directory.CreateDirectory(libraryLocation);
+                if (!System.IO.Directory.Exists(System.IO.Path.Combine(libraryLocation, "JADE")))
+                    engine.Evaluate("install.packages(\"JADE\", repos='http://cran.us.r-project.org', lib = \"{0}\")", libraryLocation.Replace(@"\", @"\\"));
 
                 // R also uses \ as the escape character, so replace \ with \\:
                 engine.Evaluate("setwd(\"{0}\")", workingDirectory.Replace(@"\", @"\\"));
@@ -594,7 +578,7 @@ namespace KinectHeartRateResearch
             }
         }
 
-
+        public string StatusText { get { return "TEST"; } }
 
         /// <summary>
         /// Finds the closest body from the sensor if any
