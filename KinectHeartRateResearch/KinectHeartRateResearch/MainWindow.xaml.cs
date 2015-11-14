@@ -1,22 +1,19 @@
 ﻿using Microsoft.Kinect;
 using Microsoft.Kinect.Face;
+using Microsoft.Research.DynamicDataDisplay;
+using Microsoft.Research.DynamicDataDisplay.DataSources;
 using RDotNet;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
+using System.Threading;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.Windows.Threading;
 
 namespace KinectHeartRateResearch
 {
@@ -74,6 +71,8 @@ namespace KinectHeartRateResearch
             m_secondsElapsed = new System.Diagnostics.Stopwatch();
 
             InitializeR();
+
+            InitPlotter();
         }
 
         private void InitializeR()
@@ -565,6 +564,8 @@ namespace KinectHeartRateResearch
                             double norm_green = prime_green / size;
                             double norm_ir = prime_ir / size;
 
+                            Plot(norm_red, norm_green, norm_blue, norm_ir);
+
                             string data = string.Format("{0},{1},{2},{3},{4},{5}\n", 
                                 m_secondsElapsed.ElapsedMilliseconds.ToString(EnNumberFormat),
                                 norm_alpha.ToString(EnNumberFormat),
@@ -713,6 +714,62 @@ namespace KinectHeartRateResearch
 
             m_Sensor.Close();
             m_Sensor = null;            
+        }
+
+
+
+
+
+        ObservableDataSource<Point> plotterSourceRed   = null;
+        ObservableDataSource<Point> plotterSourceGreen = null;
+        ObservableDataSource<Point> plotterSourceBlue  = null;
+        ObservableDataSource<Point> plotterSourceIR    = null;
+
+        // based on SimulationSample.csproj in DynamicDataDisplay v0.3.1
+        private void InitPlotter()
+        {
+            // Create first source
+            plotterSourceRed = new ObservableDataSource<Point>();
+            // Set identity mapping of point in collection to point on plot
+            plotterSourceRed.SetXYMapping(p => p);
+
+            // Create second source
+            plotterSourceGreen = new ObservableDataSource<Point>();
+            // Set identity mapping of point in collection to point on plot
+            plotterSourceGreen.SetXYMapping(p => p);
+
+            // Create third source
+            plotterSourceBlue = new ObservableDataSource<Point>();
+            // Set identity mapping of point in collection to point on plot
+            plotterSourceBlue.SetXYMapping(p => p);
+
+            plotterSourceIR = new ObservableDataSource<Point>();
+            plotterSourceIR.SetXYMapping(p => p);
+
+            // Add all three graphs. Colors are not specified and chosen random
+            plotter.AddLineGraph(plotterSourceRed,   2, "Red");
+            plotter.AddLineGraph(plotterSourceGreen, 2, "Green");
+            plotter.AddLineGraph(plotterSourceBlue,  2, "Blue");
+            plotter.AddLineGraph(plotterSourceIR,    2, "IR");
+        }
+
+        private double x = 0;
+        private void Plot(double r, double g, double b, double ir)
+        {
+            return;
+
+
+            x++;
+
+            Point pr = new Point(x, r);
+            Point pg = new Point(x, g);
+            Point pb = new Point(x, b);
+            Point pir = new Point(x, ir);
+
+            plotterSourceRed.AppendAsync(Dispatcher, pr);
+            plotterSourceGreen.AppendAsync(Dispatcher, pg);
+            plotterSourceBlue.AppendAsync(Dispatcher, pb);
+            plotterSourceIR.AppendAsync(Dispatcher, pir);
         }
     }
 

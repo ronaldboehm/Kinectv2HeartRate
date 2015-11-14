@@ -4,8 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:KinectHeartRateResearch"
+        xmlns:d3="http://research.microsoft.com/DynamicDataDisplay/1.0"
         mc:Ignorable="d"
-        Title="MainWindow" Loaded="Window_Loaded" Unloaded="Window_Unloaded" >
+        Title="MainWindow" Loaded="Window_Loaded" Unloaded="Window_Unloaded" Height="817.662" >
     <Window.Resources>
         <SolidColorBrush x:Key="MediumGreyBrush" Color="#ff6e6e6e" />
         <SolidColorBrush x:Key="KinectPurpleBrush" Color="#ff52318f" />
@@ -51,6 +52,8 @@
                 <Canvas Width="100" x:Name="rateColor"></Canvas>
                 <CheckBox x:Name="keepResults" Margin="5" Foreground="{StaticResource KinectBlueBrush}" FontSize="18" >Keep Recorded Data</CheckBox>
             </StackPanel>
+            <d3:ChartPlotter Name="plotter"/>
+
         </StackPanel>
     </Grid>
 </Window>
