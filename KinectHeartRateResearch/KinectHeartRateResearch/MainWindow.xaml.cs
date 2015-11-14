@@ -165,7 +165,7 @@ namespace KinectHeartRateResearch
                 engine.Evaluate(string.Format("heartRateData <- read.csv('{0}/NormHeartRate_r61.csv')", currentDir.Replace('\\', '/')));
 #else
 
-            engine.Evaluate(string.Format("heartRateData <- read.csv('{0}')", m_filePath.Replace('\\', '/')));
+            engine.Evaluate(string.Format("heartRateData <- read.csv('{0}', sep=',', dec='.')", m_filePath.Replace('\\', '/')));
 #endif
                 engine.Evaluate(string.Format("source('{0}/RScripts/KinectHeartRate_JADE.r')", currentDir));
 
@@ -565,7 +565,13 @@ namespace KinectHeartRateResearch
                             double norm_green = prime_green / size;
                             double norm_ir = prime_ir / size;
 
-                            string data = string.Format("{0},{1},{2},{3},{4},{5}\n", m_secondsElapsed.ElapsedMilliseconds, norm_alpha, norm_red, norm_green, norm_blue, norm_ir);
+                            string data = string.Format("{0},{1},{2},{3},{4},{5}\n", 
+                                m_secondsElapsed.ElapsedMilliseconds.ToString(EnNumberFormat),
+                                norm_alpha.ToString(EnNumberFormat),
+                                norm_red.ToString(EnNumberFormat),
+                                norm_green.ToString(EnNumberFormat),
+                                norm_blue.ToString(EnNumberFormat),
+                                norm_ir.ToString(EnNumberFormat));
 
                             var bytesToWrite = System.Text.Encoding.UTF8.GetBytes(data);
                             m_fileStream.WriteAsync(bytesToWrite, 0, bytesToWrite.Length);
@@ -577,6 +583,9 @@ namespace KinectHeartRateResearch
                 }
             }
         }
+
+        private static System.Globalization.CultureInfo EnNumberFormat = new System.Globalization.CultureInfo("en-US");
+
 
         public string StatusText { get { return "TEST"; } }
 
