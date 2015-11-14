@@ -215,6 +215,10 @@ namespace KinectHeartRateResearch
             //Send data to AzureML
             m_timerStarted = true;
             m_timer.Start();
+            
+            stopwatch.Reset(); 
+            stopwatch.Start();
+            
             btnCalculateRate.IsEnabled = false;
             m_secondsElapsed.Start();
 #endif
@@ -734,10 +738,10 @@ namespace KinectHeartRateResearch
             plotterSourceIR    = CreateObservableDataSourceWithIdentiyMapping();
 
             // Add all three graphs. Colors are not specified and chosen random
-            plotter.AddLineGraph(plotterSourceRed,   2, "Red");
-            plotter.AddLineGraph(plotterSourceGreen, 2, "Green");
-            plotter.AddLineGraph(plotterSourceBlue,  2, "Blue");
-            plotter.AddLineGraph(plotterSourceIR,    2, "IR");
+            plotter.AddLineGraph(plotterSourceRed,   Colors.Red,   2, "Red");
+            plotter.AddLineGraph(plotterSourceGreen, Colors.Green, 2, "Green");
+            plotter.AddLineGraph(plotterSourceBlue,  Colors.Blue,  2, "Blue");
+            plotter.AddLineGraph(plotterSourceIR,    Colors.Gray,  2, "IR");
         }
 
         private static ObservableDataSource<Point> CreateObservableDataSourceWithIdentiyMapping() 
@@ -747,10 +751,11 @@ namespace KinectHeartRateResearch
             return result;
         }
 
-        private double x = 0;
+        private System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+
         private void Plot(double r, double g, double b, double ir)
         {
-            x++;
+            var x = stopwatch.ElapsedMilliseconds / 1000.0;
 
             plotterSourceRed.AppendAsync(  Dispatcher, new Point(x, r));
             plotterSourceGreen.AppendAsync(Dispatcher, new Point(x, g));
