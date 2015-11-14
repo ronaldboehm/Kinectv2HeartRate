@@ -564,7 +564,7 @@ namespace KinectHeartRateResearch
                             double norm_green = prime_green / size;
                             double norm_ir = prime_ir / size;
 
-                            Plot(norm_red, norm_green, norm_blue, norm_ir);
+                            Plot(prime_red, prime_green, prime_blue, prime_ir);
 
                             string data = string.Format("{0},{1},{2},{3},{4},{5}\n", 
                                 m_secondsElapsed.ElapsedMilliseconds.ToString(EnNumberFormat),
@@ -575,7 +575,9 @@ namespace KinectHeartRateResearch
                                 norm_ir.ToString(EnNumberFormat));
 
                             var bytesToWrite = System.Text.Encoding.UTF8.GetBytes(data);
-                            m_fileStream.WriteAsync(bytesToWrite, 0, bytesToWrite.Length);
+                            
+                            if (m_fileStream != null)
+                                m_fileStream.WriteAsync(bytesToWrite, 0, bytesToWrite.Length);
                             //m_fileStream.FlushAsync();
 
                         }
@@ -718,8 +720,6 @@ namespace KinectHeartRateResearch
 
 
 
-
-
         ObservableDataSource<Point> plotterSourceRed   = null;
         ObservableDataSource<Point> plotterSourceGreen = null;
         ObservableDataSource<Point> plotterSourceBlue  = null;
@@ -728,23 +728,10 @@ namespace KinectHeartRateResearch
         // based on SimulationSample.csproj in DynamicDataDisplay v0.3.1
         private void InitPlotter()
         {
-            // Create first source
-            plotterSourceRed = new ObservableDataSource<Point>();
-            // Set identity mapping of point in collection to point on plot
-            plotterSourceRed.SetXYMapping(p => p);
-
-            // Create second source
-            plotterSourceGreen = new ObservableDataSource<Point>();
-            // Set identity mapping of point in collection to point on plot
-            plotterSourceGreen.SetXYMapping(p => p);
-
-            // Create third source
-            plotterSourceBlue = new ObservableDataSource<Point>();
-            // Set identity mapping of point in collection to point on plot
-            plotterSourceBlue.SetXYMapping(p => p);
-
-            plotterSourceIR = new ObservableDataSource<Point>();
-            plotterSourceIR.SetXYMapping(p => p);
+            plotterSourceRed   = CreateObservableDataSourceWithIdentiyMapping();
+            plotterSourceGreen = CreateObservableDataSourceWithIdentiyMapping();
+            plotterSourceBlue  = CreateObservableDataSourceWithIdentiyMapping();
+            plotterSourceIR    = CreateObservableDataSourceWithIdentiyMapping();
 
             // Add all three graphs. Colors are not specified and chosen random
             plotter.AddLineGraph(plotterSourceRed,   2, "Red");
@@ -753,23 +740,22 @@ namespace KinectHeartRateResearch
             plotter.AddLineGraph(plotterSourceIR,    2, "IR");
         }
 
+        private static ObservableDataSource<Point> CreateObservableDataSourceWithIdentiyMapping() 
+        {
+            var result = new ObservableDataSource<Point>();
+            result.SetXYMapping(p => p);
+            return result;
+        }
+
         private double x = 0;
         private void Plot(double r, double g, double b, double ir)
         {
-            return;
-
-
             x++;
 
-            Point pr = new Point(x, r);
-            Point pg = new Point(x, g);
-            Point pb = new Point(x, b);
-            Point pir = new Point(x, ir);
-
-            plotterSourceRed.AppendAsync(Dispatcher, pr);
-            plotterSourceGreen.AppendAsync(Dispatcher, pg);
-            plotterSourceBlue.AppendAsync(Dispatcher, pb);
-            plotterSourceIR.AppendAsync(Dispatcher, pir);
+            plotterSourceRed.AppendAsync(  Dispatcher, new Point(x, r));
+            plotterSourceGreen.AppendAsync(Dispatcher, new Point(x, g));
+            plotterSourceBlue.AppendAsync( Dispatcher, new Point(x, b));
+            plotterSourceIR.AppendAsync(   Dispatcher, new Point(x, ir));
         }
     }
 
