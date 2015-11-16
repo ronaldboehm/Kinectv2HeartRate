@@ -31,8 +31,6 @@ namespace KinectHeartRateResearch
         private Microsoft.Kinect.Face.FaceFrameReader m_FaceReader;
         private WriteableBitmap m_colorBitmap = null;
         private RectI m_drawingRegion;
-        private System.IO.FileStream m_fileStream;
-        private string m_filePath;
         private System.Timers.Timer m_timer;
         private bool m_timerStarted;
         private int m_countdown;
@@ -81,14 +79,7 @@ namespace KinectHeartRateResearch
 
         private void initializeFile()
         {
-            m_filePath = string.Format("{0}\\NormHeartRate_{1}{2}{3}{4}{5}{6}.{7}.csv", System.Environment.CurrentDirectory, DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second, DateTime.Now.Millisecond);
-
-
-            m_fileStream = new System.IO.FileStream(m_filePath, System.IO.FileMode.CreateNew, System.IO.FileAccess.ReadWrite, System.IO.FileShare.ReadWrite, 512, true);
-            //string header = "nAlpha,nRed,nGreen,nBlue,nIr\n";
-            string header = "nMillisecondsElapsed,nBlue,nGreen,nRed,nAlpha,nIr\n";
-            var headerBytes = System.Text.Encoding.UTF8.GetBytes(header);
-            m_fileStream.Write(headerBytes, 0, headerBytes.Length);
+            jadeCalculation.Begin();
         }
 
         private void M_timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
@@ -105,7 +96,6 @@ namespace KinectHeartRateResearch
                            {
                                lblColorFeeds.Text = "Data has been captured. Please wait while we process the signals...";
                                btnCalculateRate.IsEnabled = true;
-                               closeFile();
                                m_timerStarted = false;
                                ProcessData();
                            });
@@ -122,11 +112,9 @@ namespace KinectHeartRateResearch
 
         private void ProcessData()
         {
-            bool keepFile = keepResults.IsChecked.HasValue && keepResults.IsChecked.Value;
+            var heartrate = jadeCalculation.ProcessData(keepFile: keepResults.IsChecked.HasValue && keepResults.IsChecked.Value);
 
-            var hr = jadeCalculation.ProcessData(m_filePath, keepFile);
-
-            lblRate.Text = ((int)hr).ToString();
+            lblRate.Text = ((int)heartrate).ToString();
             lblColorFeeds.Text = "Signal processed.";
         }
 
@@ -497,19 +485,9 @@ namespace KinectHeartRateResearch
 
                             Plot(norm_red, norm_green, norm_blue, norm_ir);
 
-                            string data = string.Format("{0},{1},{2},{3},{4},{5}\n", 
-                                m_secondsElapsed.ElapsedMilliseconds.ToString(EnNumberFormat),
-                                norm_alpha.ToString(EnNumberFormat),
-                                norm_red.ToString(EnNumberFormat),
-                                norm_green.ToString(EnNumberFormat),
-                                norm_blue.ToString(EnNumberFormat),
-                                norm_ir.ToString(EnNumberFormat));
-
-                            var bytesToWrite = System.Text.Encoding.UTF8.GetBytes(data);
-                            
-                            if (m_fileStream != null)
-                                m_fileStream.WriteAsync(bytesToWrite, 0, bytesToWrite.Length);
-                            //m_fileStream.FlushAsync();
+                            jadeCalculation.Write(
+                                m_secondsElapsed.ElapsedMilliseconds,
+                                norm_alpha, norm_red, norm_green, norm_blue, norm_ir);
 
                         }
                         m_colorBitmap.Unlock();
@@ -517,8 +495,6 @@ namespace KinectHeartRateResearch
                 }
             }
         }
-
-        private static System.Globalization.CultureInfo EnNumberFormat = new System.Globalization.CultureInfo("en-US");
 
 
         public string StatusText { get { return "TEST"; } }
@@ -615,22 +591,11 @@ namespace KinectHeartRateResearch
             DisposeOfObjects();
         }
 
-        private void closeFile()
-        {
-            if (null != m_fileStream)
-            {
-                m_fileStream.Flush();
-                m_fileStream.Close();
-                m_fileStream = null;
-            }
-
-        }
         private void DisposeOfObjects()
         {
             jadeCalculation.Dispose();
             jadeCalculation = null;
 
-            closeFile();            
             m_colorBitmap = null;
 
             m_FaceSource.Dispose();
@@ -668,7 +633,7 @@ namespace KinectHeartRateResearch
             plotter.AddLineGraph(plotterSourceRed,   Color.FromArgb(128, 255,   0,   0),   2, "Red");
             plotter.AddLineGraph(plotterSourceGreen, Color.FromArgb(255,   0, 255,   0),   2, "Green");
             plotter.AddLineGraph(plotterSourceBlue,  Color.FromArgb(128,   0,   0, 255),   2, "Blue");
-            plotter.AddLineGraph(plotterSourceIR,    Colors.Gray,                      2, "IR");
+            plotter.AddLineGraph(plotterSourceIR,    Colors.Gray,                          2, "IR");
         }
 
         private static ObservableDataSource<Point> CreateObservableDataSourceWithIdentiyMapping() 
