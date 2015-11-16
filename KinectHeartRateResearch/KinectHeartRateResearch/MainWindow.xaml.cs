@@ -39,8 +39,7 @@ namespace KinectHeartRateResearch
         private string countdownText;
         private const int INITIAL_COUNTDOWN = 30;
         private System.Diagnostics.Stopwatch m_secondsElapsed;
-        private bool m_JADE_Loaded;
-        private REngine engine;
+        private JadeIcaFacade jadeCalculation;
 
         public string CountdownText
         {
@@ -70,44 +69,9 @@ namespace KinectHeartRateResearch
             btnCalculateRate.IsEnabled = false;
             m_secondsElapsed = new System.Diagnostics.Stopwatch();
 
-            InitializeR();
+            jadeCalculation = new JadeIcaFacade();
 
             InitPlotter();
-        }
-
-        private void InitializeR()
-        {
-            engine = REngine.GetInstance();
-            engine.Initialize();
-
-            if (!m_JADE_Loaded)
-            {
-                InitJadePackage();
-                m_JADE_Loaded = true;
-            }
-            
-        }
-
-        private string workingDirectory { get { return System.Environment.CurrentDirectory; } }
-        private string libraryLocation { get { return System.IO.Path.Combine(workingDirectory, "Libs"); } }
-
-        private void InitJadePackage() 
-        {
-            try
-            {
-                if (!System.IO.Directory.Exists(libraryLocation))
-                    System.IO.Directory.CreateDirectory(libraryLocation);
-                if (!System.IO.Directory.Exists(System.IO.Path.Combine(libraryLocation, "JADE")))
-                    engine.Evaluate("install.packages(\"JADE\", repos='http://cran.us.r-project.org', lib = \"{0}\")", libraryLocation.Replace(@"\", @"\\"));
-
-                // R also uses \ as the escape character, so replace \ with \\:
-                engine.Evaluate("setwd(\"{0}\")", workingDirectory.Replace(@"\", @"\\"));
-                engine.Evaluate("library(JADE, lib.loc=\"{0}\")", libraryLocation.Replace(@"\", @"\\"));
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Error initializing R. Continuing startup to allow adding the R packages in the settings." + e.ToString());
-            }
         }
 
         private void MainWindow_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -156,51 +120,14 @@ namespace KinectHeartRateResearch
 
         }
 
-
         private void ProcessData()
         {
-            var currentDir = System.Environment.CurrentDirectory.Replace('\\', '/');
-#if DEBUG_TEST
-                engine.Evaluate(string.Format("heartRateData <- read.csv('{0}/NormHeartRate_r61.csv')", currentDir.Replace('\\', '/')));
-#else
+            bool keepFile = keepResults.IsChecked.HasValue && keepResults.IsChecked.Value;
 
-            engine.Evaluate(string.Format("heartRateData <- read.csv('{0}', sep=',', dec='.')", m_filePath.Replace('\\', '/')));
-#endif
-                engine.Evaluate(string.Format("source('{0}/RScripts/KinectHeartRate_JADE.r')", currentDir));
+            var hr = jadeCalculation.ProcessData(m_filePath, keepFile);
 
-            //HR1 and HR4 are band filtered to match frequency of normal heart rate range
-            //HR2 and HR3 are not and included incase your environment has closer matches to these frequencies which were seperated
-            NumericVector hrVect1 = engine.GetSymbol("hr1").AsNumeric();            
-            NumericVector hrVect4 = engine.GetSymbol("hr4").AsNumeric();
-
-            //In case your environment matches closer
-            NumericVector hrVect2 = engine.GetSymbol("hr2").AsNumeric();
-            NumericVector hrVect3 = engine.GetSymbol("hr3").AsNumeric();
-
-            double hr1 = hrVect1.First();
-                double hr4 = hrVect4.First();
-
-            //incase you need these seperated frequencies
-            double hr2 = hrVect2.First();
-            double hr3 = hrVect3.First();
-
-                double hr = (hr1 > hr4) ? hr1 : hr4;
-                lblRate.Text = ((int)hr).ToString();
-                lblColorFeeds.Text = "Signal processed.";
-
-            bool? isChecked = keepResults.IsChecked;
-            if (!isChecked.HasValue)
-            { 
-                System.IO.File.Delete(m_filePath);
-            }
-            else
-            {
-                if(!isChecked.Value )
-                {
-                    System.IO.File.Delete(m_filePath);
-                }
-            }
-
+            lblRate.Text = ((int)hr).ToString();
+            lblColorFeeds.Text = "Signal processed.";
         }
 
         private void btnCalculateRate_Click(object sender, RoutedEventArgs e)
@@ -700,8 +627,8 @@ namespace KinectHeartRateResearch
         }
         private void DisposeOfObjects()
         {
-            engine.Dispose();
-            engine = null;
+            jadeCalculation.Dispose();
+            jadeCalculation = null;
 
             closeFile();            
             m_colorBitmap = null;
@@ -761,24 +688,6 @@ namespace KinectHeartRateResearch
             plotterSourceGreen.AppendAsync(Dispatcher, new Point(x, g));
             plotterSourceBlue.AppendAsync( Dispatcher, new Point(x, b));
             plotterSourceIR.AppendAsync(   Dispatcher, new Point(x, ir));
-        }
-    }
-
-    public static class RExtensions
-    {
-        public static SymbolicExpression Evaluate(this REngine R, string format, object arg0)
-        {
-            return R.Evaluate(String.Format(format, arg0));
-        }
-
-        public static SymbolicExpression Evaluate(this REngine R, string format, params object[] args)
-        {
-            return R.Evaluate(String.Format(format, args));
-        }
-
-        public static IList<T> AsList<T>(this SymbolicExpression expression)
-        {
-            return expression.AsVector().ToArray().Select(obj => (T)obj).ToList();
         }
     }
 }
